@@ -454,6 +454,8 @@ class cata_tiles
                                  const bool ( &invisible )[5] );
         bool draw_furniture( const tripoint &p, lit_level ll, int &height_3d,
                              const bool ( &invisible )[5] );
+        bool draw_furniture_below(const tripoint& p, lit_level ll, int& height_3d,
+            const bool(&invisible)[5]);
         bool draw_graffiti( const tripoint &p, lit_level ll, int &height_3d,
                             const bool ( &invisible )[5] );
         bool draw_trap( const tripoint &p, lit_level ll, int &height_3d,
@@ -476,6 +478,8 @@ class cata_tiles
                                         int &height_3d );
 
         bool draw_item_highlight( const tripoint &pos );
+        bool draw_z_layer_mask(const tripoint& p, lit_level ll, int& height_3d,
+            const bool(&invisible)[5]);
 
     public:
         // Animation layers

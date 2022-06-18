@@ -237,6 +237,8 @@ void cata_tiles::on_options_changed()
     settings.scale_to_fit = get_option<bool>( "PIXEL_MINIMAP_SCALE_TO_FIT" );
 
     minimap->set_settings( settings );
+
+    SDL_SetRenderDrawBlendMode(renderer.get(), SDL_BLENDMODE_BLEND);
 }
 
 void tileset::clear()
@@ -1568,12 +1570,10 @@ void cata_tiles::draw( const point &dest, const tripoint &center, int width, int
 
             draw_points.emplace_back( pos, height_3d, ll, invisible );
         }
-        const std::array<decltype( &cata_tiles::draw_furniture ), 11> drawing_layers = {{
-                &cata_tiles::draw_furniture, &cata_tiles::draw_graffiti, &cata_tiles::draw_trap,
-                &cata_tiles::draw_field_or_item, &cata_tiles::draw_vpart_below,
-                &cata_tiles::draw_critter_at_below, &cata_tiles::draw_terrain_below,
-                &cata_tiles::draw_vpart, &cata_tiles::draw_critter_at,
-                &cata_tiles::draw_zone_mark, &cata_tiles::draw_zombie_revival_indicators
+        const std::array<decltype( &cata_tiles::draw_furniture ), 13> drawing_layers = {{
+                &cata_tiles::draw_furniture, &cata_tiles::draw_graffiti, &cata_tiles::draw_trap, &cata_tiles::draw_field_or_item,
+                &cata_tiles::draw_terrain_below, &cata_tiles::draw_furniture_below, &cata_tiles::draw_vpart_below, &cata_tiles::draw_critter_at_below,
+                &cata_tiles::draw_vpart, &cata_tiles::draw_critter_at, &cata_tiles::draw_zone_mark, &cata_tiles::draw_zombie_revival_indicators, &cata_tiles::draw_z_layer_mask
             }
         };
         // for each of the drawing layers in order, back to front ...
@@ -1583,6 +1583,7 @@ void cata_tiles::draw( const point &dest, const tripoint &center, int width, int
                 ( this->*f )( p.pos, p.ll, p.height_3d, p.invisible );
             }
         }
+
         // display number of monsters to spawn in mapgen preview
         for( const auto &p : draw_points ) {
             const auto mon_override = monster_override.find( p.pos );
@@ -2601,7 +2602,53 @@ bool cata_tiles::apply_vision_effects( const tripoint &pos,
     return true;
 }
 
-bool cata_tiles::draw_terrain_below( const tripoint &p, const lit_level, int &,
+bool cata_tiles::draw_z_layer_mask(const tripoint& p, const lit_level ll, int& /*height_3d*/,
+    const bool(&invisible)[5])
+{
+    map& here = get_map();
+    const auto low_override = draw_below_override.find(p);
+    const bool low_overridden = low_override != draw_below_override.end();
+    if (low_overridden ? !low_override->second :
+        (invisible[0] || here.dont_draw_lower_floor(p))) {
+        return false;
+    }
+
+    SDL_Color color = { 135, 206, 235, 125 };
+    int sizefactor = 1;
+
+    SDL_Rect belowRect;
+    belowRect.h = tile_width / sizefactor;
+    belowRect.w = tile_height / sizefactor;
+    if (tile_iso) {
+        belowRect.h = (belowRect.h * 2) / 3;
+        belowRect.w = (belowRect.w * 3) / 4;
+    }
+    // translate from player-relative to screen relative tile position
+    point screen;
+    if (tile_iso) {
+        screen.x = ((p.x - o.x) - (o.y - p.y) + screentile_width - 2) *
+            tile_width / 2 + op.x;
+        // y uses tile_width because width is definitive for iso tiles
+        // tile footprints are half as tall as wide, arbitrarily tall
+        screen.y = ((p.y - o.y) - (p.x - o.x) - 4) * tile_width / 4 +
+            screentile_height * tile_height / 2 + // TODO: more obvious centering math
+            op.y;
+    }
+    else {
+        screen.x = (p.x - o.x) * tile_width + op.x;
+        screen.y = (p.y - o.y) * tile_height + op.y;
+    }
+    belowRect.x = screen.x + (tile_width - belowRect.w) / 2;
+    belowRect.y = screen.y + (tile_height - belowRect.h) / 2;
+    if (tile_iso) {
+        belowRect.y += tile_height / 8;
+    }
+
+    geometry->rect(renderer, belowRect, color);
+
+    return true;
+}
+bool cata_tiles::draw_terrain_below( const tripoint &p, const lit_level ll, int &height_3d,
                                      const bool ( &invisible )[5] )
 {
     map &here = get_map();
@@ -2613,59 +2660,8 @@ bool cata_tiles::draw_terrain_below( const tripoint &p, const lit_level, int &,
     }
 
     tripoint pbelow = tripoint( p.xy(), p.z - 1 );
-    SDL_Color tercol = curses_color_to_SDL( c_dark_gray );
-
-    const ter_t &curr_ter = here.ter( pbelow ).obj();
-    const furn_t &curr_furn = here.furn( pbelow ).obj();
-    int part_below;
-    int sizefactor = 2;
-    if( curr_furn.has_flag( ter_furn_flag::TFLAG_SEEN_FROM_ABOVE ) || curr_furn.movecost < 0 ) {
-        tercol = curses_color_to_SDL( curr_furn.color() );
-    } else if( const vehicle *veh = here.veh_at_internal( pbelow, part_below ) ) {
-        const int roof = veh->roof_at_part( part_below );
-        const auto vpobst = vpart_position( const_cast<vehicle &>( *veh ),
-                                            part_below ).obstacle_at_part();
-        tercol = curses_color_to_SDL( ( roof >= 0 ||
-                                        vpobst ) ? c_light_gray : c_magenta );
-        sizefactor = ( roof >= 0 || vpobst ) ? 4 : 2;
-    } else if( curr_ter.has_flag( ter_furn_flag::TFLAG_SEEN_FROM_ABOVE ) ||
-               curr_ter.has_flag( ter_furn_flag::TFLAG_NO_FLOOR ) ||
-               curr_ter.movecost == 0 ) {
-        tercol = curses_color_to_SDL( curr_ter.color() );
-    } else {
-        sizefactor = 4;
-        tercol = curses_color_to_SDL( curr_ter.color() );
-    }
-
-    SDL_Rect belowRect;
-    belowRect.h = tile_width / sizefactor;
-    belowRect.w = tile_height / sizefactor;
-    if( tile_iso ) {
-        belowRect.h = ( belowRect.h * 2 ) / 3;
-        belowRect.w = ( belowRect.w * 3 ) / 4;
-    }
-    // translate from player-relative to screen relative tile position
-    point screen;
-    if( tile_iso ) {
-        screen.x = ( ( pbelow.x - o.x ) - ( o.y - pbelow.y ) + screentile_width - 2 ) *
-                   tile_width / 2 + op.x;
-        // y uses tile_width because width is definitive for iso tiles
-        // tile footprints are half as tall as wide, arbitrarily tall
-        screen.y = ( ( pbelow.y - o.y ) - ( pbelow.x - o.x ) - 4 ) * tile_width / 4 +
-                   screentile_height * tile_height / 2 + // TODO: more obvious centering math
-                   op.y;
-    } else {
-        screen.x = ( pbelow.x - o.x ) * tile_width + op.x;
-        screen.y = ( pbelow.y - o.y ) * tile_height + op.y;
-    }
-    belowRect.x = screen.x + ( tile_width - belowRect.w ) / 2;
-    belowRect.y = screen.y + ( tile_height - belowRect.h ) / 2;
-    if( tile_iso ) {
-        belowRect.y += tile_height / 8;
-    }
-    geometry->rect( renderer, belowRect, tercol );
-
-    return true;
+  
+    return draw_terrain(pbelow, ll, height_3d, invisible);
 }
 
 bool cata_tiles::draw_terrain( const tripoint &p, const lit_level ll, int &height_3d,
@@ -2932,6 +2928,20 @@ bool cata_tiles::draw_furniture( const tripoint &p, const lit_level ll, int &hei
                    lit_level::MEMORIZED, nv_goggles_activated, height_3d );
     }
     return false;
+}
+
+bool cata_tiles::draw_furniture_below(const tripoint& p, lit_level ll, int& height_3d, const bool(&invisible)[5])
+{
+    map& here = get_map();
+    const auto low_override = draw_below_override.find(p);
+    const bool low_overridden = low_override != draw_below_override.end();
+    if (low_overridden ? !low_override->second :
+        (invisible[0] || here.dont_draw_lower_floor(p))) {
+        return false;
+    }
+
+    tripoint pbelow = tripoint(p.xy(), p.z - 1);
+    return draw_furniture(pbelow, ll, height_3d, invisible);
 }
 
 bool cata_tiles::draw_trap( const tripoint &p, const lit_level ll, int &height_3d,
@@ -3327,7 +3337,7 @@ bool cata_tiles::draw_field_or_item( const tripoint &p, const lit_level ll, int 
     return ret_draw_field && ret_draw_items;
 }
 
-bool cata_tiles::draw_vpart_below( const tripoint &p, const lit_level /*ll*/, int &/*height_3d*/,
+bool cata_tiles::draw_vpart_below( const tripoint &p, const lit_level ll, int &height_3d,
                                    const bool ( &invisible )[5] )
 {
     const auto low_override = draw_below_override.find( p );
@@ -3337,10 +3347,9 @@ bool cata_tiles::draw_vpart_below( const tripoint &p, const lit_level /*ll*/, in
         return false;
     }
     tripoint pbelow( p.xy(), p.z - 1 );
-    int height_3d_below = 0;
     bool below_invisible[5];
     std::fill_n( below_invisible, 5, false );
-    return draw_vpart( pbelow, lit_level::LOW, height_3d_below, below_invisible );
+    return draw_vpart( pbelow, ll, height_3d, below_invisible );
 }
 
 bool cata_tiles::draw_vpart( const tripoint &p, lit_level ll, int &height_3d,
@@ -3411,7 +3420,7 @@ bool cata_tiles::draw_vpart( const tripoint &p, lit_level ll, int &height_3d,
     return false;
 }
 
-bool cata_tiles::draw_critter_at_below( const tripoint &p, const lit_level, int &,
+bool cata_tiles::draw_critter_at_below( const tripoint &p, const lit_level ll, int &height_3d,
                                         const bool ( &invisible )[5] )
 {
     // Check if we even need to draw below. If not, bail.
@@ -3439,31 +3448,8 @@ bool cata_tiles::draw_critter_at_below( const tripoint &p, const lit_level, int 
         !( you.sees_with_infrared( *critter ) || you.sees_with_specials( *critter ) ) ) {
         return false;
     }
-
-    const point screen_point = player_to_screen( pbelow.xy() );
-
-    SDL_Color tercol = curses_color_to_SDL( c_red );
-    const int sizefactor = 2;
-
-    SDL_Rect belowRect;
-    belowRect.h = tile_width / sizefactor;
-    belowRect.w = tile_height / sizefactor;
-
-    if( tile_iso ) {
-        belowRect.h = ( belowRect.h * 2 ) / 3;
-        belowRect.w = ( belowRect.w * 3 ) / 4;
-    }
-
-    belowRect.x = screen_point.x + ( tile_width - belowRect.w ) / 2;
-    belowRect.y = screen_point.y + ( tile_height - belowRect.h ) / 2;
-
-    if( tile_iso ) {
-        belowRect.y += tile_height / 8;
-    }
-
-    geometry->rect( renderer, belowRect, tercol );
-
-    return true;
+    
+    return draw_critter_at(pbelow, ll, height_3d, invisible);
 }
 
 bool cata_tiles::draw_critter_at( const tripoint &p, lit_level ll, int &height_3d,
