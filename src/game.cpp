@@ -7647,9 +7647,13 @@ bool game::walk_move( const tripoint_bub_ms &dest_loc, const bool via_ramp,
 
     const std::vector<field_type_id> impassable_field_ids = here.get_impassable_field_type_ids_at(
                 dest_loc );
+    const std::vector<field_type_id> player_blocking_ids =
+        here.get_entity_blocking_field_type_ids_at( dest_loc, entity_category::PLAYER );
 
     if( ( !here.passable_skip_fields( dest_loc ) || ( !impassable_field_ids.empty() &&
-            !u.is_immune_fields( impassable_field_ids ) ) ) && !pushing && !shifting_furniture ) {
+            !u.is_immune_fields( impassable_field_ids ) ) ||
+          ( !player_blocking_ids.empty() &&
+            !u.is_immune_fields( player_blocking_ids ) ) ) && !pushing && !shifting_furniture ) {
         if( vp_there && u.mounted_creature && u.mounted_creature->has_flag( mon_flag_RIDEABLE_MECH ) &&
             vp_there->vehicle().handle_potential_theft( u ) ) {
             tripoint_rel_ms diff = dest_loc - pos;

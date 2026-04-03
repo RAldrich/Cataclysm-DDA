@@ -3448,6 +3448,13 @@ bool npc::can_move_to( const tripoint_bub_ms &p, bool no_bashing ) const
 {
     map &here = get_map();
 
+    // Check for entity-blocking fields
+    const std::vector<field_type_id> npc_blocking_ids =
+        here.get_entity_blocking_field_type_ids_at( p, entity_category::NPC );
+    if( !npc_blocking_ids.empty() && !is_immune_fields( npc_blocking_ids ) ) {
+        return false;
+    }
+
     // Allow moving into any bashable spots, but penalize them during pathing
     // Doors are not passable for hallucinations
     return( rl_dist( pos_bub(), p ) <= 1 && here.has_floor_or_water( p ) &&

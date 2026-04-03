@@ -7195,6 +7195,29 @@ std::vector<field_type_id> map::get_impassable_field_type_ids_at( const tripoint
     return fields;
 }
 
+bool map::has_entity_blocking_field_at( const tripoint_bub_ms &p, entity_category cat )
+{
+    for( auto &pr : field_at( p ) ) {
+        field_entry &fd = pr.second;
+        if( fd.get_intensity_level().blocked_entities.count( cat ) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<field_type_id> map::get_entity_blocking_field_type_ids_at(
+    const tripoint_bub_ms &p, entity_category cat )
+{
+    std::vector<field_type_id> fields;
+    for( auto &fa : field_at( p ) ) {
+        if( fa.second.get_intensity_level().blocked_entities.count( cat ) ) {
+            fields.emplace_back( fa.first );
+        }
+    }
+    return fields;
+}
+
 bool map::dangerous_field_at( const tripoint_bub_ms &p )
 {
     for( auto &pr : field_at( p ) ) {

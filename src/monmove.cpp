@@ -156,6 +156,13 @@ bool monster::will_move_to( map *here, const tripoint_bub_ms &p ) const
         return false;
     }
 
+    // Check for entity-blocking fields
+    const std::vector<field_type_id> monster_blocking_ids =
+        here->get_entity_blocking_field_type_ids_at( p, entity_category::MONSTER );
+    if( !monster_blocking_ids.empty() && !is_immune_fields( monster_blocking_ids ) ) {
+        return false;
+    }
+
     if( !here->passable_skip_fields( p ) || here->has_flag( ter_furn_flag::TFLAG_CLIMBABLE, p ) ||
         ( !impassable_field_ids.empty() &&
           !is_immune_fields( impassable_field_ids ) ) ) {
@@ -2291,6 +2298,11 @@ bool monster::push_to( const tripoint_bub_ms &p, const int boost, const size_t d
         const int movecost_penalty = here.move_cost( dest ) - 2;
         if( movecost_penalty <= -2 ) {
             // Can't push into unpassable terrain
+            continue;
+        }
+
+        // Can't push into entity-blocking fields
+        if( here.has_entity_blocking_field_at( dest, entity_category::MONSTER ) ) {
             continue;
         }
 

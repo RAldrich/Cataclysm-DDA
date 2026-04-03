@@ -29,6 +29,7 @@
 #include "coords_fwd.h"
 #include "creature.h"
 #include "enums.h"
+#include "field_type.h"
 #include "game_constants.h"
 #include "item.h"
 #include "item_stack.h"
@@ -1579,6 +1580,9 @@ class map
         // returns the a field entry that is impassable at the given point if it exists
         std::optional<field_entry> get_impassable_field_at( const tripoint_bub_ms &p );
         std::vector<field_type_id> get_impassable_field_type_ids_at( const tripoint_bub_ms &p );
+        bool has_entity_blocking_field_at( const tripoint_bub_ms &p, entity_category cat );
+        std::vector<field_type_id> get_entity_blocking_field_type_ids_at(
+            const tripoint_bub_ms &p, entity_category cat );
 
         /**
          * Get field of specific type at point.

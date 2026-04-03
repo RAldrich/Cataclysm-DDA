@@ -102,6 +102,21 @@ std::string enum_to_string<description_affix>( description_affix data )
     return "invalid";
 }
 
+template<>
+std::string enum_to_string<entity_category>( entity_category data )
+{
+    switch( data ) {
+        // *INDENT-OFF*
+        case entity_category::PLAYER: return "PLAYER";
+        case entity_category::NPC: return "NPC";
+        case entity_category::MONSTER: return "MONSTER";
+        // *INDENT-ON*
+        case entity_category::num_entity_categories:
+            break;
+    }
+    cata_fatal( "Invalid entity_category" );
+}
+
 } // namespace io
 
 generic_factory<field_type> &get_all_field_types()
@@ -217,6 +232,9 @@ void field_type::load( const JsonObject &jo, std::string_view )
                   fallback_intensity_level.dangerous );
         optional( jao, was_loaded, "move_cost", intensity_level.move_cost,
                   fallback_intensity_level.move_cost );
+        const auto entity_category_reader = enum_flags_reader<entity_category> { "entity categories" };
+        optional( jao, was_loaded, "blocked_entities", intensity_level.blocked_entities,
+                  entity_category_reader, fallback_intensity_level.blocked_entities );
         optional( jao, was_loaded, "extra_radiation_min", intensity_level.extra_radiation_min,
                   fallback_intensity_level.extra_radiation_min );
         optional( jao, was_loaded, "extra_radiation_max", intensity_level.extra_radiation_max,

@@ -2297,5 +2297,23 @@
     "display_items": true,
     "display_field": true,
     "looks_like": "fd_fatigue"
+  },
+  {
+    "id": "fd_debug_entity_block",
+    "type": "field_type",
+    "intensity_levels": [
+      {
+        "name": "debug entity blocker",
+        "sym": "*",
+        "color": "light_blue",
+        "transparent": true,
+        "blocked_entities": [ "MONSTER" ]
+      }
+    ],
+    "description_affix": "covered_in",
+    "immunity_data": {  },
+    "half_life": "9999 days",
+    "phase": "solid",
+    "display_field": true
   }
 ]

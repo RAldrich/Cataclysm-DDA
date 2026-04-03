@@ -78,5 +78,25 @@
     "shape": "blast",
     "damage_type": "pure",
     "flags": [ "SILENT", "PERCENTAGE_DAMAGE", "NO_FAIL" ]
+  },
+  {
+    "id": "debug_entity_block_spell",
+    "type": "SPELL",
+    "name": { "str": "Debug Entity Block Field", "//~": "NO_I18N" },
+    "description": { "str": "Places a debug field that blocks monster movement on a tile.", "//~": "NO_I18N" },
+    "valid_targets": [ "ground" ],
+    "effect": "attack",
+    "shape": "blast",
+    "min_range": 1,
+    "max_range": 5,
+    "min_aoe": 0,
+    "max_aoe": 0,
+    "min_damage": 0,
+    "max_damage": 0,
+    "field_id": "fd_debug_entity_block",
+    "field_chance": 1,
+    "min_field_intensity": 1,
+    "max_field_intensity": 1,
+    "flags": [ "SILENT", "NO_FAIL" ]
   }
 ]

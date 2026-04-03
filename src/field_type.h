@@ -99,6 +99,18 @@ struct field_effect {
     void deserialize( const JsonObject &jo );
 };
 
+enum class entity_category : int {
+    PLAYER,
+    NPC,
+    MONSTER,
+    num_entity_categories
+};
+
+template<>
+struct enum_traits<entity_category> {
+    static constexpr entity_category last = entity_category::num_entity_categories;
+};
+
 struct field_intensity_level {
     translation name;
     uint32_t symbol = PERCENT_SIGN_UNICODE;
@@ -106,6 +118,7 @@ struct field_intensity_level {
     bool dangerous = false;
     bool transparent = true;
     int move_cost = 0;
+    std::set<entity_category> blocked_entities;
     int extra_radiation_min = 0;
     int extra_radiation_max = 0;
     int radiation_hurt_damage_min = 0;
