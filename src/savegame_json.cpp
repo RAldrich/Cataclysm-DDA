@@ -1133,6 +1133,7 @@ void Character::load( const JsonObject &data )
     }
     data.read( "stomach", stomach );
     data.read( "guts", guts );
+    data.read( "shock_gauge", shock_gauge_ );
     data.read( "automoveroute", auto_move_route );
 
     known_traps.clear();
@@ -1492,6 +1493,7 @@ void Character::store( JsonOut &json ) const
     }
     json.member( "stomach", stomach );
     json.member( "guts", guts );
+    json.member( "shock_gauge", shock_gauge_ );
     json.member( "automoveroute", auto_move_route );
     json.member( "known_traps" );
     json.start_array();

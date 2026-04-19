@@ -70,6 +70,7 @@
 #include "projectile.h"
 #include "ret_val.h"
 #include "rng.h"
+#include "shock_gauge_check.h"
 #include "sounds.h"
 #include "string_formatter.h"
 #include "subbodypart.h"
@@ -695,6 +696,10 @@ bool Character::melee_attack_abstract( Creature &t, bool allow_special,
                         cur_weap.typeId(), hits, c->getID(), c->get_name() );
         get_event_bus().send_with_talker( this, c, e );
     }
+
+    // Fighting and inflicting harm is psychologically stressful.
+    // For the shock-mvp "making an attack" is hardcoded to the lowest stress level (1)
+    trigger_attack_stress_check( *this, 1 );
 
     const int skill_training_cap = t.is_monster() ? t.as_monster()->type->melee_training_cap :
                                    MAX_SKILL;

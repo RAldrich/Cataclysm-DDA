@@ -52,6 +52,7 @@
 #include "ranged.h"
 #include "ret_val.h"
 #include "sleep.h"
+#include "shock_gauge.h"
 #include "stomach.h"
 #include "string_formatter.h"
 #include "subbodypart.h"
@@ -4168,6 +4169,16 @@ class Character : public Creature, public visitable
         int vitamin_RDA( const vitamin_id &vitamin, int amount ) const;
 
         pimpl<player_morale> morale;
+
+        // Psychological stress gauge. See src/shock_gauge.h
+        shock_gauge shock_gauge_;
+        shock_gauge &get_shock_gauge() {
+            return shock_gauge_;
+        }
+        const shock_gauge &get_shock_gauge() const {
+            return shock_gauge_;
+        }
+
         /** Processes human-specific effects of an effect. */
         void process_one_effect( effect &it, bool is_new ) override;
 

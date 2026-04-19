@@ -73,6 +73,7 @@
 #include "projectile.h"
 #include "ret_val.h"
 #include "rng.h"
+#include "shock_gauge_check.h"
 #include "skill.h"
 #include "sounds.h"
 #include "string_formatter.h"
@@ -1223,6 +1224,9 @@ int Character::fire_gun( map &here, const tripoint_bub_ms &target, int shots, it
                                 c->getID(), c->get_name() );
                 get_event_bus().send_with_talker( this, c, e );
             }
+            // Inflicting harm is psychologically stressful.
+            // For the shock MVP, attacking with a gun is hardcoded to stress level 2.
+            trigger_attack_stress_check( *this, 2 );
             if( shot.proj.multishot ) {
                 // TODO: Pull projectile name from the ammo entry.
                 multi_projectile_hit_message( hit_entry.first, hit_entry.second.first, hit_entry.second.second,
@@ -1729,6 +1733,9 @@ dealt_projectile_attack Character::throw_item( const tripoint_bub_ms &target, co
                             c->getID(), c->get_name() );
             get_event_bus().send_with_talker( this, c, e );
         }
+        // Inflicting harm is psychologically stressful.
+        // For the shock MVP this is hardcoded to stress level 2
+        trigger_attack_stress_check( *this, 2 );
     }
     const double missed_by = dealt_attack.missed_by;
 

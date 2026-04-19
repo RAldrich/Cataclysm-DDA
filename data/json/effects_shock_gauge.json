@@ -1,0 +1,40 @@
+[
+  {
+    "type": "effect_type",
+    "id": "violence_desensitization",
+    "name": [
+      "Desensitized to Violence",
+      "Desensitized to Violence",
+      "Desensitized to Violence",
+      "Desensitized to Violence",
+      "Desensitized to Violence"
+    ],
+    "desc": [
+      "Bloodshed no longer shocks you.  You have crossed a line and find the other side quieter than you expected.",
+      "Violence is becoming familiar.  The rush fades faster than it used to.",
+      "You have done this enough times that your hands do not tremble.",
+      "The work no longer touches you.  You feel the distance from a long way off.",
+      "You have seen too much to flinch.  Something in you has gone still."
+    ],
+    "rating": "neutral",
+    "max_intensity": 5,
+    "int_add_val": 1,
+    "show_in_info": true
+  },
+  {
+    "type": "effect_type",
+    "id": "violence_trauma",
+    "name": [ "Shaken by Violence", "Shaken by Violence", "Shaken by Violence", "Shaken by Violence", "Shaken by Violence" ],
+    "desc": [
+      "The violence unsettled you.  You keep seeing it when you close your eyes.",
+      "You cannot stop replaying it.  The memory intrudes at the worst moments.",
+      "The weight of what you have done is pressing on you.  You feel it in your chest.",
+      "You are coming apart at the edges.  Sleep brings no rest.",
+      "Something inside you has broken.  You are not sure it can be put back."
+    ],
+    "rating": "bad",
+    "max_intensity": 5,
+    "int_add_val": 1,
+    "show_in_info": true
+  }
+]
